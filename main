@@ -1,0 +1,72 @@
+#! /usr/bin/env python
+#coding=utf-8
+import sys
+import HTMLParser  
+import urlparse  
+import urllib  
+import urllib2  
+import cookielib  
+import string  
+import re
+from bs4 import BeautifulSoup as bs
+
+#登录的主页面  
+hosturl = 'http://yygh.wcch.cn/'     #自己填写  
+#post数据接收和处理的页面（我们要向这个页面发送我们构造的Post数据）  
+posturl = 'http://yygh.wcch.cn/index.php?s=/index/login'     #从数据包中分析出，处理post请求的url
+#设置一个cookie处理器，它负责从服务器下载cookie到本地，并且在发送请求时带上本地的cookie  
+cj = cookielib.LWPCookieJar()  
+cookie_support = urllib2.HTTPCookieProcessor(cj)  
+opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)  
+urllib2.install_opener(opener)  
+
+#准备登陆参数formid，打开登录主页面（他的目的是从页面下载cookie，这样我们在再送post数据时就有cookie了，否则发送不成功）  
+try:
+    soup   = bs(urllib.urlopen(hosturl).read(),from_encoding='utf-8')
+    formid = soup.find("input")['value']
+except:
+    print '错误！无法解析网页'
+
+#构造header，一般header至少要包含一下两项。这两项是从抓到的包里分析得出的，大部分网站不需要headers，默认通过
+# headers = {'User-Agent' : 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; BOIE9;ZHCN)',  
+#            'Referer' : 'http://yygh.wcch.cn/',
+#            'Content-Type': 'application/x-www-form-urlencoded',
+#            'Connection':    'Keep-Alive',
+#            }  
+#构造Post数据，他也是从抓大的包里分析得出的。  
+postData = {'name': "胡侠",  
+            'password': "2522742", 
+            'formhash':formid,}  
+  
+#需要给Post数据编码成url可以解析的格式  
+postData = urllib.urlencode(postData)  
+#通过urllib2提供的request方法来向指定Url发送我们构造的数据，并完成登录过程  
+request = urllib2.Request(posturl, postData)  #如果需要headers，则增加
+response = urllib2.urlopen(request)  
+conn = response.read()  
+print conn
+
+#制作请求，并查看是否存在
+checkurl = 'http://yygh.wcch.cn/index.php?s=/clinic/0406/CHENY03/2013-07-10' 
+req = urllib2.Request(checkurl)
+if bs(urllib2.urlopen(req).read(),from_encoding='utf-8'):
+    postData2 = [
+                 'VISIT_DATE_APPTED=2013-07-10',
+                 'CLINIC_LABEL='+urllib.quote('陈媛副主任号'.decode(sys.stdin.encoding).encode('gbk')),
+                 'VISIT_TIME_APPTED='+urllib.quote('上午'.decode(sys.stdin.encoding).encode('gbk')),
+                 'INPUT_CODE=CYFZRH',
+                 'dept_code=0406',
+                 'doctor=CHENY03',
+                 'date=2013-07-10',
+                 'page=1'
+                 ]
+    postData2 = '&'.join(postData2)
+    print postData2
+    print len(postData2)
+    orderurl = 'http://yygh.wcch.cn/index.php?s=/appoint'  
+    request2 = urllib2.Request(orderurl, postData2)     #headers2 信息可以不用带入
+    response = urllib2.urlopen(request2).read()
+    
+else:
+    print '当前尚不存在页面'
+
