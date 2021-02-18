@@ -34,8 +34,8 @@ except:
 #            'Connection':    'Keep-Alive',
 #            }  
 #构造Post数据，他也是从抓大的包里分析得出的。  
-postData = {'name': "胡侠",  
-            'password': "2522742", 
+postData = {'name': "yourusername",  
+            'password': "yourpassword", 
             'formhash':formid,}  
   
 #需要给Post数据编码成url可以解析的格式  
